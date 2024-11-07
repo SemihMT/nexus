@@ -1,5 +1,26 @@
+#include <windows.h>
 #include "nexus.h"
 #include <SDL.h>
+#include <iostream>
+#include <string>
+
+
+std::string getSDL2DllPath() {
+    HMODULE hModule = GetModuleHandleA("SDL2.dll");
+    if (hModule == NULL) {
+        return "SDL2.dll not found";
+    }
+
+    char path[MAX_PATH];
+    DWORD result = GetModuleFileNameA(hModule, path, MAX_PATH);
+    
+    if (result == 0) {
+        DWORD error = GetLastError();
+        return "Error getting module path: " + std::to_string(error);
+    }
+
+    return std::string(path);
+}
 
 int main(int argc, char *argv[])
 {
@@ -25,7 +46,9 @@ int main(int argc, char *argv[])
     {
         return -1;
     }
-
+    std::string dllPath = getSDL2DllPath();
+    std::cout << "DLL path: " << dllPath << "\n";
+    
     bool isRunning = true;
     while (isRunning)
     {

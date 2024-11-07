@@ -11,7 +11,7 @@ project(Nexus
 # Include the fetchcontent package to get packages 
 include(FetchContent)
 
-set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern/")
+set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extern")
 # Get the ASIO library from the gtihub repo ###################################
 FetchContent_Declare(
         asio                                                    # target name
@@ -98,3 +98,57 @@ target_link_libraries(
         SDL2::SDL2
         SDL2::SDL2main
 )
+
+# Copy SDL2.dll to the output directory (only for Windows)
+if(WIN32)
+        if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+                add_custom_command(TARGET Nexus_Game POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/SDL2.dll"
+                        $<TARGET_FILE_DIR:Nexus_Game>/SDL2.dll
+                )
+        endif()
+        if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+                add_custom_command(TARGET Nexus_Game POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/SDL2d.dll"
+                        $<TARGET_FILE_DIR:Nexus_Game>/SDL2d.dll
+                )
+        endif()
+endif()
+
+# For Linux: copy libSDL2.so or libSDL2d.so based on the build type
+if(UNIX AND NOT APPLE)
+    if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+        add_custom_command(TARGET Nexus_Game POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_BINARY_DIR}/libSDL2.so"
+            $<TARGET_FILE_DIR:Nexus_Game>/libSDL2.so
+        )
+    endif()
+    if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+        add_custom_command(TARGET Nexus_Game POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_BINARY_DIR}/libSDL2d.so"
+            $<TARGET_FILE_DIR:Nexus_Game>/libSDL2d.so
+        )
+    endif()
+endif()
+
+# For macOS: copy libSDL2.dylib or libSDL2d.dylib based on the build type
+if(APPLE)
+    if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+        add_custom_command(TARGET Nexus_Game POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_BINARY_DIR}/libSDL2.dylib"
+            $<TARGET_FILE_DIR:Nexus_Game>/libSDL2.dylib
+        )
+    endif()
+    if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+        add_custom_command(TARGET Nexus_Game POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_BINARY_DIR}/libSDL2d.dylib"
+            $<TARGET_FILE_DIR:Nexus_Game>/libSDL2d.dylib
+        )
+    endif()
+endif()

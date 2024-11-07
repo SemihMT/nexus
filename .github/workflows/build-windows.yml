@@ -1,0 +1,44 @@
+name: Build on Windows
+
+on:
+    workflow_dispatch:
+        inputs:
+          build-config:
+            description: 'Build configuration (e.g., Release, Debug)'
+            default: 'Release'
+            required: false
+    push:
+        branches:
+            - main
+    pull_request:
+
+jobs:
+    build:
+        runs-on: windows-latest
+
+        env:
+            BUILD_CONFIG: ${{ github.event.inputs.build-config || 'Release' }}
+
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@v3
+
+            - name: Install CMake
+              run: |
+               choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+
+            - name: Install Ninja
+              run: |
+               choco install ninja -y
+
+            - name: Configure the project
+              run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=${{env.BUILD_CONFIG}}
+            
+            - name: Build the project
+              run: cmake --build build
+            
+            - name: Upload binaries
+              uses: actions/upload-artifact@v3
+              with:
+                name: nexus-binaries-${{ env.BUILD_CONFIG }}
+                path: build/${{env.BUILD_CONFIG}}
