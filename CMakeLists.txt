@@ -101,8 +101,8 @@ target_link_libraries(
 target_link_libraries(
         Nexus_Game
         PRIVATE
-        SDL2::SDL2
         SDL2::SDL2main
+        SDL2::SDL2
 )
 # Copy SDL2.dll to the output directory (only for Windows)
 if(WIN32)
