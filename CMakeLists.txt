@@ -41,6 +41,7 @@ FetchContent_Declare(
     GIT_TAG release-2.30.9
 )
 set(SDL_SHARED ON CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
 set(SDL_STATIC OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(SDL2)
 
