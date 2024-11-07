@@ -91,13 +91,12 @@ target_include_directories(
         PRIVATE
         "${SDL2_SOURCE_DIR}/include"
 )
-
 target_link_libraries(
         Nexus_Game
         PRIVATE
-        Nexus
         SDL2::SDL2
         SDL2::SDL2main
+        Nexus
 )
 
 # Copy SDL2.dll to the output directory (only for Windows)
