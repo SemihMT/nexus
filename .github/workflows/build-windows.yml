@@ -35,7 +35,7 @@ jobs:
               run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=${{env.BUILD_CONFIG}}
             
             - name: Build the project
-              run: cmake --build build
+              run:  cmake --build build --config ${{env.BUILD_CONFIG}} -j 18
             
             - name: Upload binaries
               uses: actions/upload-artifact@v3
