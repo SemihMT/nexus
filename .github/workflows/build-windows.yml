@@ -5,7 +5,7 @@ on:
         inputs:
           build-config:
             description: 'Build configuration (e.g., Release, Debug)'
-            default: 'Release'
+            default: 'Debug'
             required: false
     push:
         branches:
@@ -17,7 +17,7 @@ jobs:
         runs-on: windows-latest
 
         env:
-            BUILD_CONFIG: ${{ github.event.inputs.build-config || 'Release' }}
+            BUILD_CONFIG: ${{ github.event.inputs.build-config || 'Debug' }}
 
         steps:
             - name: Checkout Repo

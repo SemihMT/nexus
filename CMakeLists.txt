@@ -8,6 +8,8 @@ project(Nexus
         LANGUAGES CXX)
 
 
+
+
 # Include the fetchcontent package to get packages 
 include(FetchContent)
 
@@ -46,8 +48,10 @@ set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
 set(SDL_STATIC OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(SDL2)
 
+# Output SDL2 paths for verification
+message(NOTICE "SDL2 Source DIR: " ${SDL2_SOURCE_DIR})
+message(NOTICE "SDL2 Binary DIR: " ${SDL2_BINARY_DIR})
 #########################################################################################
-
 
 # This project will be a static lib
 # Maybe can be a header only library for ease of use, similar to RayLib
@@ -79,9 +83,6 @@ if(WIN32)
         )
 endif()
 
-
-
-
 # Create the exe
 add_executable(
         Nexus_Game 
@@ -104,9 +105,11 @@ target_link_libraries(
         SDL2::SDL2main
         SDL2::SDL2
 )
+
 # Copy SDL2.dll to the output directory (only for Windows)
 if(WIN32)
         if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+                message("Copying in Release")
                 add_custom_command(TARGET Nexus_Game POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                         "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/SDL2.dll"
@@ -114,6 +117,7 @@ if(WIN32)
                 )
         endif()
         if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+                message("Copying in Debug")
                 add_custom_command(TARGET Nexus_Game POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                         "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/SDL2d.dll"
