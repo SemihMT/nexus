@@ -45,6 +45,7 @@ jobs:
             - name: Print current directory
               run: |
                 cd
+                tree . /f
               shell: cmd
 
             - name: Build the project
