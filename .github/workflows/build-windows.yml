@@ -9,7 +9,7 @@ on:
   push:
     paths:
       - 'src/**'
-      - '.github/workflows/windows.yml'
+      - '.github/workflows/build-windows.yml'
   release:
     types: [published]
     
