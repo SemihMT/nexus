@@ -36,16 +36,18 @@ message(NOTICE "ASIO binary DIR: " ${asio_BINARY_DIR})
 
 #########################################################################################
 
+
+set(SDL_TEST OFF CACHE BOOL "" FORCE)
+set(SDL_SHARED ON CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
+set(SDL_STATIC OFF CACHE BOOL "" FORCE)
 # Fetch SDL2 ############################################################################
 FetchContent_Declare(
     SDL2
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG release-2.30.9
 )
-set(SDL_TEST OFF CACHE BOOL "" FORCE)
-set(SDL_SHARED ON CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
-set(SDL_STATIC OFF CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(SDL2)
 
 # Output SDL2 paths for verification

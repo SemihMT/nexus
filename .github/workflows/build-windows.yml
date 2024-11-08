@@ -35,8 +35,13 @@ jobs:
               run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=${{env.BUILD_CONFIG}}
             
             - name: Print directory structure
-              uses: FiorelaCiroku/XDTesting-Print-Directory-Structure@v1.0.2
-              
+              run: |
+                echo "Root Directory Structure:"
+                dir . /s /b
+      
+                echo "Build Directory Structure:"
+                dir build /s /b
+
             - name: Build the project
               run:  cmake --build build --config ${{env.BUILD_CONFIG}} -j 18
             
