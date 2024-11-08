@@ -86,7 +86,7 @@ jobs:
     
     - name: Configure the project with Ninja and MSVC
       run: |
-        cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build-config || 'Debug' }} ^
+        cmake -S nexus -B build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build-config || 'Debug' }} ^
         -DCMAKE_C_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/cl.exe" ^
         -DCMAKE_CXX_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/cl.exe" ^
         -DSDL_TEST=OFF
