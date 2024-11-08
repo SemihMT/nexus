@@ -39,7 +39,7 @@ jobs:
                 mkdir -p build/${{env.BUILD_CONFIG}}
 
             - name: Build the project
-              run:  cmake --build build/${{env.BUILD_CONFIG}} --config ${{env.BUILD_CONFIG}} -j 18
+              run:  cmake --build . --config ${{env.BUILD_CONFIG}} -j 18
             
             - name: Upload binaries
               uses: actions/upload-artifact@v3
