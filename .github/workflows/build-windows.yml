@@ -32,7 +32,7 @@ jobs:
                choco install ninja -y
 
             - name: Configure the project
-              run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=${{env.BUILD_CONFIG}} -DSDL_TEST=OFF
+              run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=${{env.BUILD_CONFIG}} -DSDL_TEST=OFF -T host=x64
             
             - name: Ensure Build Directories Exist
               run: |
