@@ -44,8 +44,21 @@ jobs:
             
             - name: Print current directory
               run: |
+                echo root directory
                 dir
+                
+                cd extern
+                echo extern directory for libraries
+                dir
+                
+                cd sdl2-build
+                echo sdl2-build directory
+                dir
+
+                cd ..
+                cd ..
                 cd build
+                echo build directory
                 dir
               shell: cmd
             
