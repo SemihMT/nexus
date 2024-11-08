@@ -135,33 +135,22 @@ target_link_libraries(
 
 
 if(WIN32)
-    set(SDL_DLL_PATH "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/SDL2.dll")
-    set(SDL_DLL_DEBUG_PATH "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/SDL2d.dll")
-
-    # Fallback if the build config subdirectory does not exist
-    if(NOT EXISTS "${SDL_DLL_PATH}")
-        set(SDL_DLL_PATH "${SDL2_BINARY_DIR}/SDL2.dll")
-    endif()
-    if(NOT EXISTS "${SDL_DLL_DEBUG_PATH}")
-        set(SDL_DLL_DEBUG_PATH "${SDL2_BINARY_DIR}/SDL2d.dll")
-    endif()
-
-    # Copy SDL DLLs based on the build configuration
-    if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
-        message("Copying SDL2.dll in Release mode")
-        add_custom_command(TARGET Nexus_Game POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${SDL_DLL_PATH}"
-            $<TARGET_FILE_DIR:Nexus_Game>/SDL2.dll
-        )
-    elseif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-        message("Copying SDL2d.dll in Debug mode")
-        add_custom_command(TARGET Nexus_Game POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${SDL_DLL_DEBUG_PATH}"
-            $<TARGET_FILE_DIR:Nexus_Game>/SDL2d.dll
-        )
-    endif()
+        if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+                message("Copying in Release")
+                add_custom_command(TARGET Nexus_Game POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/SDL2.dll"
+                        $<TARGET_FILE_DIR:Nexus_Game>/SDL2.dll
+                )
+        endif()
+        if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+                message("Copying in Debug")
+                add_custom_command(TARGET Nexus_Game POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/SDL2d.dll"
+                        $<TARGET_FILE_DIR:Nexus_Game>/SDL2d.dll
+                )
+        endif()
 endif()
 
 # # For Linux: copy libSDL2.so or libSDL2d.so based on the build type
