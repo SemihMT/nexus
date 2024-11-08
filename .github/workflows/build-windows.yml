@@ -68,3 +68,9 @@ jobs:
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nexus_game_${{ matrix.build_type }}_${{matrix.os}}.zip
+        path: ./${{ steps.strings.outputs.build-output-dir }}.zip
