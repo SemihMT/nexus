@@ -47,19 +47,35 @@ jobs:
     - name: Install Ninja
       run: choco install ninja -y
 
+
+    - name: Check directory structure
+      run: |
+        dir
+      shell: cmd
+    
     - name: Configure the project with Ninja and MSVC
       run: |
-        cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build-config || 'Debug' }} \
-        -DCMAKE_C_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/cl.exe" \
-        -DCMAKE_CXX_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/cl.exe" \
+        cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build-config || 'Debug' }} ^
+        -DCMAKE_C_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/cl.exe" ^
+        -DCMAKE_CXX_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC/14.29.30133/bin/Hostx64/x64/cl.exe" ^
         -DSDL_TEST=OFF
+      shell: cmd
+    
+    - name: Check directory structure
+      run: |
+        dir
       shell: cmd
 
     - name: Build the project using Ninja
       run: |
         cmake --build build --config ${{ github.event.inputs.build-config || 'Debug' }}
       shell: cmd
-
+   
+    - name: Check directory structure
+      run: |
+        dir
+      shell: cmd
+      
     - name: Generate Artifacts
       run: |
         dir build/${{ github.event.inputs.build-config || 'Debug' }}
