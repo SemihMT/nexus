@@ -61,9 +61,19 @@ jobs:
         -DSDL_TEST=OFF
       shell: cmd
     
-    - name: Check directory structure
+    - name: Check directory structure of nexus
       run: |
+        cd nexus
         dir
+        cd ..
+      shell: cmd
+    
+    - name: Check directory structure of nexus_dev
+      run: |
+        cd nexus_dev_win_x64
+        dir
+        cd ..
+        cd nexus
       shell: cmd
 
     - name: Build the project using Ninja
@@ -75,7 +85,7 @@ jobs:
       run: |
         dir
       shell: cmd
-      
+
     - name: Generate Artifacts
       run: |
         dir build/${{ github.event.inputs.build-config || 'Debug' }}
