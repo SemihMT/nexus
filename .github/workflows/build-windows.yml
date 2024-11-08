@@ -49,12 +49,12 @@ jobs:
     # Install CMake only if not already installed
     - name: Install CMake
       run: |
-          if ! cmake --version; then
-           echo "CMake is not installed, installing now."
-           choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
-          else
-           echo "CMake is already installed."
-          fi
+          if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
+            echo "CMake is not installed, installing now."
+            choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          } else {
+            echo "CMake is already installed."
+          }
 
     - name: Setup Environment
       run: |
