@@ -52,21 +52,21 @@ FetchContent_MakeAvailable(SDL2)
 
 
 # Set output directory for SDL2 binaries only
-if(TARGET SDL2)
-    set_target_properties(SDL2 PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
-    )
-endif()
+# if(TARGET SDL2)
+#     set_target_properties(SDL2 PROPERTIES
+#         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
+#         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
+#         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
+#     )
+# endif()
 
-if(TARGET SDL2main)
-    set_target_properties(SDL2main PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
-    )
-endif()
+# if(TARGET SDL2main)
+#     set_target_properties(SDL2main PROPERTIES
+#         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
+#         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
+#         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extern/sdl2-build/${CMAKE_BUILD_TYPE}"
+#     )
+# endif()
 
 # Output SDL2 paths for verification
 message(NOTICE "SDL2 Source DIR: " ${SDL2_SOURCE_DIR})
