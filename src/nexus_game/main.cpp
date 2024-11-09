@@ -1,69 +1,52 @@
-#include <windows.h>
 #include "nexus.h"
 #include <SDL.h>
 #include <iostream>
-#include <string>
+#include "nxsg_window.h"
+#include "nxsg_renderer.h"
 
-
-std::string getSDL2DllPath() {
-    HMODULE hModule = GetModuleHandleA("SDL2.dll");
-    if (hModule == NULL) {
-        return "SDL2.dll not found";
+bool HandleEvents()
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
+    {
+        switch (event.type)
+        {
+        case SDL_QUIT:
+            return true;
+            break;
+        }
     }
-
-    char path[MAX_PATH];
-    DWORD result = GetModuleFileNameA(hModule, path, MAX_PATH);
-    
-    if (result == 0) {
-        DWORD error = GetLastError();
-        return "Error getting module path: " + std::to_string(error);
-    }
-
-    return std::string(path);
+    return false;
 }
 
 int main(int argc, char *argv[])
 {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    // returns zero on success else non-zero
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
-        return -1;
+        printf("error initializing SDL: %s\n", SDL_GetError());
     }
 
-    SDL_Window *window = SDL_CreateWindow("SDL2 Window",
-                                          SDL_WINDOWPOS_CENTERED,
-                                          SDL_WINDOWPOS_CENTERED,
-                                          680, 480,
-                                          0);
+    nxsg::window window{};
+    nxsg::renderer renderer{window};
 
-    if (!window)
+    bool shouldClose{false};
+    while (!shouldClose)
     {
-        return -1;
+        // Process input
+        shouldClose = HandleEvents();   
+        
+        // Update the game here:
+        // TODO: update function
+        
+        
+        renderer.SetDrawColor({128,0, 0, 255});
+        renderer.Clear();
+        // Do rendering here
+
+        renderer.Present();
     }
 
-    SDL_Surface *windowSurface = SDL_GetWindowSurface(window);
-
-    if (!windowSurface)
-    {
-        return -1;
-    }
-    std::string dllPath = getSDL2DllPath();
-    std::cout << "DLL path: " << dllPath << "\n";
-    
-    bool isRunning = true;
-    while (isRunning)
-    {
-        SDL_Event e;
-        while (SDL_PollEvent(&e) > 0)
-        {
-            switch (e.type)
-            {
-            case SDL_QUIT:
-                isRunning = false;
-                break;
-            }
-            SDL_UpdateWindowSurface(window);
-        }
-    }
-
+    SDL_Quit();
     return 0;
 }

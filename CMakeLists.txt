@@ -109,14 +109,21 @@ if(WIN32)
         )
 endif()
 
+# Get all .cpp files from the src/nexus_game directory
+file(GLOB NEXUS_GAME_SRC
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus_game/*.cpp"
+)
+
 # Create the exe
 add_executable(
         Nexus_Game 
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus_game/main.cpp"
+        ${NEXUS_GAME_SRC}
+        
 )
 target_include_directories(
         Nexus_Game
         PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus_game"
         "${SDL2_SOURCE_DIR}/include"
 )
 target_link_libraries(
