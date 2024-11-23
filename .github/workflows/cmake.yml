@@ -1,0 +1,109 @@
+name: Build Nexus
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  CMAKE_VERSION: "3.29.6"
+  NINJA_VERSION: "1.12.1"
+  CCACHE_VERSION: "4.10"
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: Windows MSVC
+            os: windows-latest
+            cc: cl
+            cxx: cl
+            environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+          - name: Windows MinGW
+            os: windows-latest
+            cc: gcc
+            cxx: g++
+          - name: Ubuntu GCC
+            os: ubuntu-latest
+            cc: gcc
+            cxx: g++
+          - name: macOS Clang
+            os: macos-latest
+            cc: clang
+            cxx: clang++
+
+    runs-on: ${{ matrix.config.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Tools (CMake, Ninja, ccache)
+        run: |
+          if [[ "${{ matrix.config.os }}" == "windows-latest" ]]; then
+            choco install cmake --version=$CMAKE_VERSION
+            choco install ninja
+            choco install ccache
+          elif [[ "${{ matrix.config.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y cmake ninja-build ccache
+          elif [[ "${{ matrix.config.os }}" == "macos-latest" ]]; then
+            brew install cmake ninja ccache
+          fi
+
+      - name: Setup ccache
+        run: |
+          ccache --zero-stats
+          echo "max_size = 400M" > ~/.ccache/ccache.conf
+        env:
+          CCACHE_DIR: ${{ github.workspace }}/.ccache
+
+      - name: Cache build artifacts
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: nexus-ccache-${{ matrix.config.name }}-${{ github.run_id }}
+          restore-keys: nexus-ccache-
+
+      - name: Configure Build
+        run: |
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -D CMAKE_C_COMPILER=${{ matrix.config.cc }} \
+            -D CMAKE_CXX_COMPILER=${{ matrix.config.cxx }} \
+            -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -GNinja
+
+      - name: Build
+        run: cmake --build build --config $BUILD_TYPE
+
+      - name: Test
+        run: ctest -j $(nproc) --output-on-failure
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nexus-${{ matrix.config.name }}
+          path: build/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
