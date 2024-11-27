@@ -13,6 +13,16 @@ else()
     message(FATAL_ERROR "Unsupported platform for SDL copy!")
 endif()
 
+# Debugging: Check if the SDL library exists in the expected location
+message(STATUS "SDL Library to copy: ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}")
+
+# Check if the SDL library exists
+if(EXISTS "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}")
+    message(STATUS "SDL library exists at: ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}")
+else()
+    message(WARNING "SDL library does not exist at: ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}")
+endif()
+
 # Add a post-build command to copy the appropriate SDL library
 if(DEFINED SDL_SHARED_LIB)
     add_custom_command(TARGET Nexus_Game POST_BUILD

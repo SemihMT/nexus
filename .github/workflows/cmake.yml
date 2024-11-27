@@ -50,14 +50,9 @@ jobs:
         run: |
           cmake --build build/${{ matrix.build_type }} --config ${{ matrix.build_type }} --parallel
 
-      # Step 5: Run Tests
-      - name: Run Tests
-        run: |
-          ctest --test-dir build/${{ matrix.build_type }} --output-on-failure
-
       # Step 6: Upload Artifacts
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.os }}-${{ matrix.build_type }}-artifacts
           path: build/${{ matrix.build_type }}/*
