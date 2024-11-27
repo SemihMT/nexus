@@ -10,36 +10,54 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
-        build_type: ['Release', 'Debug']
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        build_type: [Release, Debug]
+      fail-fast: false
 
     steps:
       # Step 1: Checkout the code
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2: Install Latest Stable CMake
+      # Step 2: Install CMake
       - name: Install CMake
+        if: matrix.os == 'windows-latest'
         run: |
           choco install cmake --no-progress --installargs 'ADD_CMAKE_TO_PATH=System' -y
           cmake --version
+      - name: Install CMake
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake
+          cmake --version
+      - name: Install CMake
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install cmake
+          cmake --version
 
       # Step 3: Configure Build
-      - name: Configure $build_type Build
+      - name: Configure Build
         run: |
           cmake -S . -B build/${{ matrix.build_type }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
       # Step 4: Build
-      - name: Build $build_type
+      - name: Build
         run: |
           cmake --build build/${{ matrix.build_type }} --config ${{ matrix.build_type }} --parallel
-      
+
+      # Step 5: Run Tests
+      - name: Run Tests
+        run: |
+          ctest --test-dir build/${{ matrix.build_type }} --output-on-failure
+
       # Step 6: Upload Artifacts
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: nexus-${{ matrix.build_type }}-artifacts
+          name: build-${{ matrix.os }}-${{ matrix.build_type }}-artifacts
           path: build/${{ matrix.build_type }}/*
