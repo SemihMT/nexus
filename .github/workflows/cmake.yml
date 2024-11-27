@@ -49,6 +49,12 @@ jobs:
       - name: Build
         run: |
           cmake --build build/${{ matrix.build_type }} --config ${{ matrix.build_type }} --parallel
+          
+      - name: Find libSDL
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          find . -name "libSDL2*.so"
+        shell: bash
 
       # Step 6: Upload Artifacts
       - name: Upload Artifact
