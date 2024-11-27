@@ -12,20 +12,21 @@ elseif(APPLE)
         set(SDL_SHARED_LIB "libSDL2-2.0d.dylib")
     endif()
 elseif(UNIX)
-    # Search for the libSDL2.so file using a find command
-    execute_process(
+    # Search for the libSDL2.so file using a find command, but run after the build
+    set(POST_BUILD_COMMAND)
+    add_custom_command(
+        OUTPUT ${CMAKE_BINARY_DIR}/libSDL2.so
+        COMMAND ${CMAKE_COMMAND} -E echo "Searching for libSDL2.so after build..."
         COMMAND find ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE} -name "libSDL2*.so"
-        RESULT_VARIABLE FIND_RESULT
-        OUTPUT_VARIABLE FIND_OUTPUT
-        ERROR_VARIABLE FIND_ERROR
-        OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/libSDL2.so"
+        $<TARGET_FILE_DIR:Nexus_Game>/libSDL2.so
+        COMMENT "Copying SDL2 library after build"
+        VERBATIM
     )
-    # Check if the find command was successful
-    if(FIND_RESULT EQUAL 0 AND FIND_OUTPUT)
-        string(REGEX REPLACE "^.*" "" SDL_SHARED_LIB ${FIND_OUTPUT})
-    else()
-        message(FATAL_ERROR "SDL2 shared library not found in ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
-    endif()
+    add_custom_target(copy_sdl2_lib ALL DEPENDS ${CMAKE_BINARY_DIR}/libSDL2.so)
+
+    message("Configured post-build step to copy SDL library: libSDL2.so")
 else()
     message(FATAL_ERROR "Unsupported platform for SDL copy!")
 endif()
@@ -42,7 +43,7 @@ endif()
 
 # Add a post-build command to copy the appropriate SDL library
 if(DEFINED SDL_SHARED_LIB)
-
+    
     add_custom_command(TARGET Nexus_Game POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}"
