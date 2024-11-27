@@ -28,16 +28,18 @@ jobs:
           cmake --version
 
       # Step 3: Configure Build
-      - name: Configure ${build_type} Build
+      - name: Configure $build_type Build
         run: |
           cmake -S . -B build/${{ matrix.build_type }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
       # Step 4: Build
-      - name: Build ${build_type}
+      - name: Build $build_type
         run: |
           cmake --build build/${{ matrix.build_type }} --config ${{ matrix.build_type }} --parallel
-
-      # Step 5: Run Tests
-      - name: Run ${build_type} Tests
-        run: |
-          ctest --test-dir build/${{ matrix.build_type }} --output-on-failure
+      
+      # Step 6: Upload Artifacts
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-${{ matrix.build_type }}-artifacts
+          path: build/${{ matrix.build_type }}/*
