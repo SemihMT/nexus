@@ -37,7 +37,7 @@ if(DEFINED SDL_SHARED_LIB)
         add_custom_command(TARGET Nexus_Game POST_BUILD
             # First, use find to locate the shared library after build
             COMMAND ${CMAKE_COMMAND} -E echo "Searching for SDL shared library..."
-            COMMAND find ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE} -name "libSDL2*.so"
+            COMMAND find . -name "libSDL2*.so"
             COMMENT "Searching and copying SDL shared library after build (Unix)"
         )
         message("Configured post-build step to copy SDL library: ${SDL_SHARED_LIB}")
