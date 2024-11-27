@@ -37,7 +37,7 @@ if(DEFINED SDL_SHARED_LIB)
         COMMAND ${CMAKE_COMMAND} -E echo "Target executable directory: $<TARGET_FILE_DIR:Nexus_Game>"
         COMMAND ${CMAKE_COMMAND} -E echo "Source SDL library: ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}"
         COMMAND ${CMAKE_COMMAND} -E echo "Destination for SDL library: $<TARGET_FILE_DIR:Nexus_Game>/${SDL_SHARED_LIB}"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        COMMAND ${CMAKE_COMMAND} -E copy
             "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}"
             $<TARGET_FILE_DIR:Nexus_Game>/${SDL_SHARED_LIB}
     )
