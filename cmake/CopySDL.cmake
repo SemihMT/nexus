@@ -33,6 +33,12 @@ endif()
 
 # Add a post-build command to copy the appropriate SDL library
 if(DEFINED SDL_SHARED_LIB)
+    if(NOT EXISTS ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE})
+        if(EXISTS ${SDL_SHARED_LIB})
+            message("SDL2 shared lib exists in ${SDL2_BINARY_DIR}")
+        endif()
+        file(MAKE_DIRECTORY ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE})
+    endif()
     add_custom_command(TARGET Nexus_Game POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo "Target executable directory: $<TARGET_FILE_DIR:Nexus_Game>"
         COMMAND ${CMAKE_COMMAND} -E echo "Source SDL library: ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}"
