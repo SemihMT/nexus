@@ -4,6 +4,16 @@ add_library(
     STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus/nexus.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus/nexus.cpp"
+
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus/client.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus/client.cpp"
+
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus/server.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus/server.cpp"
+    
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus/connection.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus/connection.cpp"
+
 )
 
 # Include directories for Nexus

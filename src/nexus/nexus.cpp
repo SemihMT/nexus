@@ -1,20 +1,47 @@
 #include "nexus.h"
-#include <iostream>
-
-// Windows version definition (versions of windows handle networking differently?)
-#ifdef _WIN32
-#define _WIN32_WINNT 0x0A00 // Windows 10
-#endif
-
-// ASIO
-#include <asio.hpp>
-#include <asio/ts/buffer.hpp>
-#include <asio/ts/internet.hpp>
 
 namespace nxs
 {
-    void PrintHello()
+    void Nexus::Init()
     {
-        std::cout << "Hello from the Nexus API!\n";
+        std::cout << "Initializing the Nexus Library!" << "\n";
+        // Explicitly initialize the Nexus library
+        Nexus &instance = Nexus::GetInstance();
+        instance.m_WorkerThread = std::thread{[&](){
+            try
+            {
+                instance.m_IOContext.run();
+            }
+            catch(const std::exception &e)
+            {
+                std::cerr << "Exception in Nexus worker thread: " << e.what() << "\n";
+            }
+        }};
+    }
+
+    
+    void Nexus::Shutdown()
+    {
+        // Will do any cleanup code here
+        Nexus &instance = GetInstance();
+        std::cout << "Shutting down Nexus...\n";
+
+        // Stop the IO context
+        instance.m_IOContext.stop();
+
+        // Join the worker thread if it is joinable
+        if (instance.m_WorkerThread.joinable())
+        {
+            instance.m_WorkerThread.join();
+        }
+
+        // Reset the work guard to release the executor
+        instance.m_WorkGuard.reset();
+    }
+
+    asio::io_context &Nexus::GetContext()
+    {
+        // Return the context object for fine grained control
+        return GetInstance().m_IOContext;
     }
 }
