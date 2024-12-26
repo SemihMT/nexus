@@ -19,6 +19,8 @@ namespace nxsg
         window &operator=(window &&) = delete;
     public:
         SDL_Window* GetSDLWindow() const {return m_sdlWindow;}
+        uint32_t width() const {return m_width;}
+        uint32_t height() const {return m_height;}
 
     private:
         std::string m_title{"Window"};

@@ -15,6 +15,7 @@ target_include_directories(
     PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus_game"
     "${SDL2_SOURCE_DIR}/include"
+    "${SDL2_ttf_SOURCE_DIR}/SDL_ttf.h"
 )
 
 # Link Nexus and SDL2 libraries
@@ -24,6 +25,7 @@ target_link_libraries(
     Nexus
     SDL2::SDL2main
     SDL2::SDL2
+    SDL2_ttf::SDL2_ttf
 )
 
 # Include post-build commands

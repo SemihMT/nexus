@@ -39,4 +39,8 @@ namespace nxsg
     {
         SDL_SetRenderDrawColor(m_sdlRenderer, color.r, color.g, color.b, color.a);
     }
+    SDL_Renderer *renderer::GetSDLRenderer() const
+    {
+        return m_sdlRenderer;
+    }
 } // namespace nxsg

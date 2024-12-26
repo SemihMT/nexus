@@ -23,6 +23,7 @@ namespace nxsg
         void SetDrawColor(Uint32 r,Uint32 g,Uint32 b,Uint32 a);
         void SetDrawColor(Uint32 r,Uint32 g,Uint32 b);
         void SetDrawColor(const SDL_Color& color);
+        SDL_Renderer* GetSDLRenderer() const;
 
         private:
         SDL_RendererFlags m_rendererFlags{SDL_RENDERER_ACCELERATED};

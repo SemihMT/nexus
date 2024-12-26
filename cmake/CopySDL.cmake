@@ -2,14 +2,18 @@
 if(WIN32)
     if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
         set(SDL_SHARED_LIB "SDL2.dll")
+        set(SDL_TTF_SHARED_LIB "SDL2_ttf.dll")
     elseif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
         set(SDL_SHARED_LIB "SDL2d.dll")
+        set(SDL_TTF_SHARED_LIB "SDL2_ttfd.dll")
     endif()
 elseif(APPLE)
     if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
         set(SDL_SHARED_LIB "libSDL2-2.0.dylib")
+        set(SDL_TTF_SHARED_LIB "libSDL2_ttf-2.20.dylib")
     elseif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
         set(SDL_SHARED_LIB "libSDL2-2.0d.dylib")
+        set(SDL_TTF_SHARED_LIB "libSDL2_ttf-2.20d.dylib")
     endif()
 elseif(UNIX)
     if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
@@ -39,6 +43,11 @@ if(DEFINED SDL_SHARED_LIB)
             "${SDL2_BINARY_DIR}/${SDL_SHARED_LIB}"
             "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}"
     ) 
+    add_custom_command(TARGET Nexus_Game POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SDL2_ttf_BINARY_DIR}/${SDL_TTF_SHARED_LIB}"
+            "${SDL2_ttf_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_TTF_SHARED_LIB}"
+    ) 
     endif()
     add_custom_command(TARGET Nexus_Game POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo "Target executable directory: $<TARGET_FILE_DIR:Nexus_Game>"
@@ -47,6 +56,14 @@ if(DEFINED SDL_SHARED_LIB)
         COMMAND ${CMAKE_COMMAND} -E copy
             "${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}"
             $<TARGET_FILE_DIR:Nexus_Game>/${SDL_SHARED_LIB}
+    )
+    add_custom_command(TARGET Nexus_Game POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "Target executable directory: $<TARGET_FILE_DIR:Nexus_Game>"
+        COMMAND ${CMAKE_COMMAND} -E echo "Source SDL library: ${SDL2_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_SHARED_LIB}"
+        COMMAND ${CMAKE_COMMAND} -E echo "Destination for SDL library: $<TARGET_FILE_DIR:Nexus_Game>/${SDL_SHARED_LIB}"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SDL2_ttf_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${SDL_TTF_SHARED_LIB}"
+            $<TARGET_FILE_DIR:Nexus_Game>/${SDL_TTF_SHARED_LIB}
     )
     message("Configured post-build step to copy SDL library: ${SDL_SHARED_LIB}")
 endif()

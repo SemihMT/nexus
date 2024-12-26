@@ -10,6 +10,7 @@
 
 #include "singleton.h"
 #include <iostream>
+#include <queue>
 namespace nxs
 {
   class Nexus final : public Singleton<Nexus>

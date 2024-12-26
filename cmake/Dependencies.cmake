@@ -17,6 +17,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SDL2)
 
+# Fetch SDL2_ttf
+FetchContent_Declare(
+    SDL2_ttf
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL_ttf.git
+    GIT_TAG release-2.22.0
+)
+FetchContent_MakeAvailable(SDL2_ttf)
+
 # Output debug messages
 message(NOTICE "ASIO Populated?: ${asio_POPULATED}")
 message(NOTICE "SDL2 Populated?: ${SDL2_POPULATED}")
