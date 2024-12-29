@@ -29,8 +29,8 @@ namespace nxs
         void HandleWrite(const asio::error_code &error);
         void HandleRead(const asio::error_code &error);
         
-        asio::io_context &io_context_;
-        asio::ip::tcp::socket socket_;
+        asio::io_context &m_IOContext;
+        asio::ip::tcp::socket m_Socket;
     };
 }
 #endif

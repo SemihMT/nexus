@@ -18,8 +18,12 @@ elseif(APPLE)
 elseif(UNIX)
     if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
         set(SDL_SHARED_LIB "libSDL2-2.0.so")
+        set(SDL_TTF_SHARED_LIB "libSDL2_ttf-2.0.so")
+
     elseif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
         set(SDL_SHARED_LIB "libSDL2-2.0d.so")
+        set(SDL_TTF_SHARED_LIB "libSDL2_ttf-2.0d.so")
+
     endif()
 else()
     message(FATAL_ERROR "Unsupported platform for SDL copy!")
