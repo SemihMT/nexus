@@ -14,6 +14,8 @@ namespace nxs
         explicit Client();
         ~Client();
 
+
+        void Connect(asio::ip::tcp::endpoint endpoint);
         void Write();
         void Close();
 
@@ -23,7 +25,10 @@ namespace nxs
         Client &operator=(Client &&other) = delete;
 
     private:
-        void Connect();
+        void HandleConnect(const asio::error_code &error);
+        void HandleWrite(const asio::error_code &error);
+        void HandleRead(const asio::error_code &error);
+        
         asio::io_context &io_context_;
         asio::ip::tcp::socket socket_;
     };
