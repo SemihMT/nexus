@@ -82,5 +82,7 @@
         "queue": "cpp",
         "ranges": "cpp",
         "span": "cpp"
-    }
+    },
+    "editor.fontFamily": "Fira Code,Consolas, 'Courier New', monospace",
+    "editor.fontLigatures": true
 }

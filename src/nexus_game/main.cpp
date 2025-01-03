@@ -221,7 +221,14 @@
 #include <nxsg_window.h>
 #include <nxsg_renderer.h>
 #include <nxsg_text.h>
+#include <client.h>
 
+enum class MyMessageType : uint32_t
+{
+    FirstMessage,
+    Ping,
+    Pong,
+};
 int main(int argc, char *argv[])
 {
     // Initialize the Nexus library
@@ -247,22 +254,71 @@ int main(int argc, char *argv[])
     nxsg::Text connectedClientsText{renderer, "../../resources/UnifontExMono.ttf", 12};
     int connectedClients{0};
     // Starts server on port 60000
-    nxs::Server s{60000};
-    s.AddEventHandler("OnConnect", [&]()
+    nxs::Server<MyMessageType> s{60000};
+    s.AddEventHandler(nxs::Server<MyMessageType>::ServerEvent::OnConnect, [&](std::shared_ptr<nxs::Connection<MyMessageType>> connection)
                       { 
         std::cout << "Client connected!\n";
         ++connectedClients;
+
+        nxs::Message<MyMessageType> message{MyMessageType::FirstMessage};
+        message << connection->GetID();
+        s.SendToClient(connection->GetID(), message);
         connectedClientsText.markDirty();
         color = {0,255,0,255}; });
-    s.AddEventHandler("OnDisconnect", [&]()
+    s.AddEventHandler(nxs::Server<MyMessageType>::ServerEvent::OnDisconnect, [&](std::shared_ptr<nxs::Connection<MyMessageType>>)
                       { 
         std::cout << "Client disconnected!\n";
         --connectedClients;
         connectedClientsText.markDirty();
         if(connectedClients == 0)
-            color = {255,0,0,255}; 
-        });
+            color = {255,0,0,255}; });
+
+    s.AddMessageHandler(MyMessageType::Ping, [&](std::shared_ptr<nxs::Connection<MyMessageType>> connection, nxs::Message<MyMessageType> &message)
+                        {
+                            std::cout << "Received message: " << message << std::endl;
+                            // Convert message.m_Data to std::string
+                            std::string contents;
+                            message >> contents;
+                            std::cout << "Contents: " << contents << std::endl;
+                            // Echo message back to client
+                            // connection->Send(message);
+                        });
+    s.AddMessageHandler(MyMessageType::Pong, [&](std::shared_ptr<nxs::Connection<MyMessageType>> connection, nxs::Message<MyMessageType> &message)
+                        {
+                            std::cout << "Received message: " << message << "From connection with ID: " << connection->GetID() <<  std::endl;
+                            // Convert message.m_Data to std::string
+                            std::string contents;
+                            message >> contents;
+                            std::cout << "Contents: " << contents << std::endl;
+                            // Echo message back to client
+                            // connection->Send(message);
+                        });
     s.Run();
+
+    nxs::Client<MyMessageType> c;
+    // FirstMessage is a message type that the server will send to the client when it connects,
+    // containing the client's ID, it allows for initial setup of the client
+    c.AddMessageHandler(MyMessageType::FirstMessage, [&](nxs::Message<MyMessageType> &message)
+                        {
+        std::cout << "Received message: " << message << std::endl;
+        uint32_t id;
+        message >> id;
+        std::cout << "Client ID: " << id << std::endl;
+        c.SetID(id);
+    });
+
+    c.AddMessageHandler(MyMessageType::Ping, [&](nxs::Message<MyMessageType> &message)
+                        {
+        std::cout << "Received message: " << message << std::endl;
+        // Convert message.m_Data to std::string
+        std::string contents;
+        message >> contents;
+        std::cout << "Contents: " << contents << std::endl;
+
+        nxs::Message<MyMessageType> reply{MyMessageType::Pong, c.GetID()};
+        reply << std::string{"Hello from client!"};
+        c.Send(reply); });
+    c.Connect("127.0.0.1", 60000);
 
     SDL_StartTextInput();
     bool shouldClose{false};
@@ -299,12 +355,13 @@ int main(int argc, char *argv[])
                     SDL_free(tempText);
                     text.markDirty();
                 }
-                else if(event.key.keysym.sym == SDLK_RETURN)
+                else if (event.key.keysym.sym == SDLK_RETURN)
                 {
                     text.markDirty();
-                    s.Send(message);
-                    message += '\n';
-                    
+                    nxs::Message<MyMessageType> message{MyMessageType::Ping};
+                    message << std::string{"Hello from server!"};
+                    s.Broadcast(message);
+                    // message += '\n';
                 }
                 break;
 
@@ -330,8 +387,8 @@ int main(int argc, char *argv[])
         renderer.Clear();
         // Do rendering here
         // Render text
-        text.setText(message, {255,255,255,255});
-        connectedClientsText.setText("Connected clients: " + std::to_string(connectedClients), {255,255,255,255});
+        text.setText(message, {255, 255, 255, 255});
+        connectedClientsText.setText("Connected clients: " + std::to_string(connectedClients), {255, 255, 255, 255});
 
         text.render(position.x, position.y);
         connectedClientsText.render(window.width() - connectedClientsText.width(), 0);

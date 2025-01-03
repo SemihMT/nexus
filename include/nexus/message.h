@@ -16,49 +16,77 @@ namespace nxs
         static_assert(std::is_same_v<std::underlying_type_t<MessageType>, uint32_t>,
                       "MessageType must have uint32_t as its underlying type.");
 
-        Header() = default;
         // The size of the message body in bytes NOT INCLUDING the header
         uint32_t size{};
         // The ID of the message sender
-        uint8_t owner{};
+        uint32_t owner{};
         // The type of the message being sent (user-defined)
         MessageType type{};
     };
 
     template <typename MessageType>
-    class Message
+    struct Message
     {
         // Test for MessageType being an enum class and having uint32_t as its underlying type
         static_assert(std::is_enum_v<MessageType>, "MessageType must be an enum class.");
         static_assert(std::is_same_v<std::underlying_type_t<MessageType>, uint32_t>,
                       "MessageType must have uint32_t as its underlying type.");
 
-    public:
-        Message(MessageType type, uint8_t owner = 0) : m_Header{0, owner, type} {}
+        Message(MessageType type, uint32_t owner = 0) : m_Header{0, owner, type} {}
 
         // Overloaded << operator to allow for easy message creation
         template <typename T>
-        Message &operator<<(const T &data)
+        friend Message<MessageType> &operator<<(Message<MessageType> &msg, const T &data)
         {
             static_assert(std::is_standard_layout_v<T>, "Data must be standard layout.");
-            const size_t size = m_Data.size();
-            std::cout << "Data size: " << sizeof(T) << std::endl;
+            const size_t size = msg.m_Data.size();
 
-            m_Data.resize(size + sizeof(T));
-            std::memcpy(m_Data.data() + size, &data, sizeof(T));
-            m_Header.size = m_Data.size();
-            return *this;
+            msg.m_Data.resize(size + sizeof(T));
+            std::memcpy(msg.m_Data.data() + size, &data, sizeof(T));
+            msg.m_Header.size = msg.m_Data.size();
+            return msg;
         }
         // Overloaded >> operator to allow for easy message reading
         template <typename T>
-        Message &operator>>(T &data)
+        friend Message<MessageType> &operator>>(Message<MessageType> &msg, T &data)
         {
             static_assert(std::is_standard_layout_v<T>, "Data must be standard layout.");
-            const size_t size = m_Data.size() - sizeof(T);
-            std::memcpy(&data, m_Data.data() + size, sizeof(T));
-            m_Data.resize(size);
-            m_Header.size = m_Data.size();
-            return *this;
+            const size_t size = msg.m_Data.size() - sizeof(T);
+            std::memcpy(&data, msg.m_Data.data() + size, sizeof(T));
+            msg.m_Data.resize(size);
+            msg.m_Header.size = msg.m_Data.size();
+            return msg;
+        }
+        // Overloaded << operator to allow for easy message creation
+        friend Message<MessageType> &operator<<(Message<MessageType> &msg, const std::string &data)
+        {
+            const size_t size = msg.m_Data.size();
+            // Resize the data vector to fit the string size (size_t) + the actual string size
+            msg.m_Data.resize(size + data.size() + sizeof(size_t) );
+            // Copy the string to the end of the data vector
+            std::memcpy(msg.m_Data.data() + size, data.data(), data.size());
+            // Copy the size of the string to the end of the data vector
+            size_t dataSize = data.size();
+            std::memcpy(msg.m_Data.data() + size + data.size(), &dataSize, sizeof(size_t));
+            // Update the header size
+            msg.m_Header.size = msg.m_Data.size();
+            return msg;
+        }
+        // Overloaded >> operator to allow for easy message reading
+        friend Message<MessageType> &operator>>(Message<MessageType> &msg, std::string &data)
+        {
+           // Read the size of the string
+            size_t dataSize;
+            std::memcpy(&dataSize, msg.m_Data.data() + msg.m_Data.size() - sizeof(size_t), sizeof(size_t));
+            // Resize the string to fit the data
+            data.resize(dataSize);
+            // Copy the data to the string
+            std::memcpy(data.data(), msg.m_Data.data() + msg.m_Data.size() - sizeof(size_t) - dataSize, dataSize);
+            // Resize the data vector to remove the string
+            msg.m_Data.resize(msg.m_Data.size() - dataSize - sizeof(size_t));
+            // Update the header size
+            msg.m_Header.size = msg.m_Data.size();
+            return msg;
         }
 
         // Overloaded ostream operator to allow for easy message debugging
@@ -89,8 +117,6 @@ namespace nxs
 
             return os;
         }
-
-    private:
         Header<MessageType> m_Header{};
         std::vector<std::byte> m_Data;
     };

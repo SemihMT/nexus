@@ -12,9 +12,15 @@
  */
 namespace nxs
 {
-
+    template <typename MessageType>
     class Server
     {
+        public:
+        enum class ServerEvent
+        {
+            OnConnect,
+            OnDisconnect
+        };
     public:
         /**
          * @brief Construct a new Server object
@@ -27,9 +33,26 @@ namespace nxs
         {
         }
 
-        void AddEventHandler(const std::string &eventName, std::function<void()> handler)
+        void AddMessageHandler(MessageType messageType, std::function<void(std::shared_ptr<Connection<MessageType>>, Message<MessageType> &)> handler)
         {
-            m_EventHandlers[eventName] = handler;
+            m_MessageHandlers[messageType] = handler;
+        }
+        void AddEventHandler(ServerEvent event, std::function<void(std::shared_ptr<Connection<MessageType>>)> handler)
+        {
+            m_EventHandlers[event] = handler;
+        }
+        void ProcessIncomingMessage(std::shared_ptr<Connection<MessageType>> connection, Message<MessageType> &message)
+        {
+            auto it = m_MessageHandlers.find(message.m_Header.type);
+            if (it != m_MessageHandlers.end())
+            {
+                it->second(connection, message);
+            }
+            else
+            {
+                std::cerr << "No handler registered for message type: "
+                          << static_cast<uint32_t>(message.m_Header.type) << "\n";
+            }
         }
 
         void Run(bool shouldBlock = false)
@@ -43,23 +66,35 @@ namespace nxs
                 }
             }
         }
-        void Send(std::shared_ptr<Connection> connection, const std::string &message)
+        // Send a message to a specific client by ID
+        void SendToClient(uint32_t clientID, const Message<MessageType> &message)
         {
-            if(connection)
-                connection->Send(message);
+            auto it = m_Connections.find(clientID);
+            if (it != m_Connections.end())
+            {
+                it->second->Send(message);
+            }
+            else
+            {
+                std::cerr << "Client ID " << clientID << " not found.\n";
+            }
         }
-        void Send(const std::string &message)
+
+        // Broadcast a message to all clients
+        void Broadcast(const Message<MessageType> &message)
         {
-            for (auto &connection : m_Connections)
+            for (auto &[id, connection] : m_Connections)
             {
                 connection->Send(message);
             }
         }
-        void OnConnectionDisconnected(std::shared_ptr<Connection> connection)
+        void OnConnectionDisconnected(std::shared_ptr<Connection<MessageType>> connection)
         {
-            CallEventHandler("OnDisconnect");
-            m_Connections.erase(std::remove(m_Connections.begin(), m_Connections.end(), connection), m_Connections.end());
+            CallEventHandler(ServerEvent::OnDisconnect, connection);
+            // Remove connection from list
+            m_Connections.erase(connection->GetID());
         }
+
     private:
         /**
          * @brief Creates a Connection pointer using Connection::Create(),
@@ -67,26 +102,35 @@ namespace nxs
          */
         void StartAccept()
         {
-            auto connectionPtr = Connection::Create();
+            auto connectionPtr = Connection<MessageType>::Create();
             connectionPtr->SetServer(this);
             m_Acceptor.async_accept(connectionPtr->socket(), std::bind(&Server::HandleAccept, this, connectionPtr, asio::placeholders::error));
         }
-        void HandleAccept(std::shared_ptr<Connection> newConnection, const std::error_code &error)
+        void HandleAccept(std::shared_ptr<Connection<MessageType>> newConnection, const std::error_code &error)
         {
             if (!error)
             {
-                CallEventHandler("OnConnect");
+                uint32_t newClientID = m_NextID++;
+                newConnection->SetID(newClientID);
+                m_Connections[newClientID] = newConnection;
                 newConnection->Start();
-                m_Connections.push_back(newConnection);
+                CallEventHandler(ServerEvent::OnConnect, newConnection);
             }
             StartAccept();
         }
 
-        void CallEventHandler(const std::string &eventName)
+        void CallMessageHandler(MessageType message)
         {
-            if (m_EventHandlers.find(eventName) != m_EventHandlers.end())
+            if (m_MessageHandlers.find(message) != m_MessageHandlers.end())
             {
-                m_EventHandlers[eventName]();
+                m_MessageHandlers[message]();
+            }
+        }
+        void CallEventHandler(ServerEvent event , std::shared_ptr<Connection<MessageType>> connection)
+        {
+            if (m_EventHandlers.find(event) != m_EventHandlers.end())
+            {
+                m_EventHandlers[event](connection);
             }
         }
 
@@ -105,9 +149,16 @@ namespace nxs
          * @brief The ASIO TCP Acceptor object, handles accepting incoming connections on the port
          */
         tcp::acceptor m_Acceptor;
-        //map of event handler functions
-        std::unordered_map<std::string, std::function<void()>> m_EventHandlers;
-        std::vector<std::shared_ptr<Connection>> m_Connections;
+
+        /// Map of event handlers
+        std::unordered_map<MessageType, std::function<void(std::shared_ptr<Connection<MessageType>>, Message<MessageType> &)>> m_MessageHandlers;
+        /// Map of event handlers
+        std::unordered_map<ServerEvent, std::function<void(std::shared_ptr<Connection<MessageType>>)>> m_EventHandlers;
+
+        /// The next ID to be assigned to a connection
+        uint32_t m_NextID{1001};
+        /// Map of IDs to connections
+        std::unordered_map<uint32_t, std::shared_ptr<Connection<MessageType>>> m_Connections;
     };
 }
 #endif
