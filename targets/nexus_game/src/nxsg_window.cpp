@@ -1,4 +1,4 @@
-#include "nxsg_window.h"
+#include "nexus_game/nxsg_window.h"
 
 namespace nxsg
 {

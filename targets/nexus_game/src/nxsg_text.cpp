@@ -1,5 +1,5 @@
-#include "nxsg_text.h"
-#include "nxsg_renderer.h"
+#include "nexus_game/nxsg_text.h"
+#include "nexus_game/nxsg_renderer.h"
 #include <stdexcept>
 
 nxsg::Text::Text(const nxsg::renderer& renderer, const std::string& fontPath, int fontSize)

@@ -13,5 +13,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Include additional configuration files
 include(cmake/Dependencies.cmake)    # External dependencies
-include(cmake/NexusLibrary.cmake)    # Nexus static library
-include(cmake/NexusGame.cmake)       # Nexus_Game executable
+#include(cmake/NexusLibrary.cmake)    # Nexus static library
+#include(cmake/NexusGame.cmake)       # Nexus_Game executable
+add_subdirectory(targets/nexus)
+add_subdirectory(targets/nexus_game)
+add_subdirectory(targets/nexus_connect_disconnect)

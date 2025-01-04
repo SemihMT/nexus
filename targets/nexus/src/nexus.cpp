@@ -1,4 +1,4 @@
-#include "nexus.h"
+#include "nexus/nexus.h"
 
 namespace nxs
 {

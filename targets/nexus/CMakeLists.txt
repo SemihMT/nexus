@@ -3,16 +3,16 @@ add_library(
     Nexus
     STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus/nexus.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus/nexus.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus.cpp"
 
     "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus/client.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus/client.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/client.cpp"
 
     "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus/server.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus/server.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/server.cpp"
     
     "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus/connection.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/nexus/connection.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/connection.cpp"
 
 )
 
@@ -20,7 +20,7 @@ add_library(
 target_include_directories(
     Nexus
     PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     "${asio_SOURCE_DIR}/asio/include"
 )
 

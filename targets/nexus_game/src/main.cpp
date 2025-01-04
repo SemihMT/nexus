@@ -215,13 +215,13 @@
 
 #include <SDL.h>
 #include "SDL_ttf.h"
-#include "nexus.h"
-#include "server.h"
+#include "nexus/nexus.h"
+#include "nexus/server.h"
 // I should probably make a central nexus_game.h file that includes all the necessary headers
-#include <nxsg_window.h>
-#include <nxsg_renderer.h>
-#include <nxsg_text.h>
-#include <client.h>
+#include <nexus_game/nxsg_window.h>
+#include <nexus_game/nxsg_renderer.h>
+#include <nexus_game/nxsg_text.h>
+#include <nexus/client.h>
 
 // enum class MyMessageType : uint32_t
 // {
@@ -471,8 +471,7 @@ void RunServer() {
     SDL_Window* window = SDL_CreateWindow("Server", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    // Open font once here
-    TTF_Font* font = TTF_OpenFont("../../resources/UnifontExMono.ttf", 12); // Open font once
+    TTF_Font* font = TTF_OpenFont("resources/UnifontExMono.ttf", 12);
     if (!font) {
         throw std::runtime_error("Failed to load font: " + std::string(TTF_GetError()));
     }

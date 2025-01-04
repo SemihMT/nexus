@@ -1,5 +1,5 @@
-#include "nxsg_renderer.h"
-#include "nxsg_window.h"
+#include "nexus_game/nxsg_renderer.h"
+#include "nexus_game/nxsg_window.h"
 #include <iostream>
 
 namespace nxsg
