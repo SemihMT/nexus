@@ -32,6 +32,13 @@ namespace nxs
             // Start listening for incoming messages
             StartRead();
         }
+        void Disconnect()
+        {
+            // Stop any ongoing reads or writes
+            m_socket.shutdown(tcp::socket::shutdown_both);
+            //Close the socket
+            m_socket.close();
+        }
         void Send(const Message<MessageType> &message)
         {
             // If the queue is empty: we're not currently writing

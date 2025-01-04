@@ -67,6 +67,17 @@ namespace nxs
                 }
             }
         }
+        void Shutdown()
+        {
+            // Close all connections
+            for (auto &[id, connection] : m_Connections)
+            {
+                connection->Disconnect();
+            }
+            // Close the acceptor
+            asio::post(m_IOContext, [this]() { m_Acceptor.close(); });
+
+        }
         // Send a message to a specific client by ID
         void SendToClient(uint32_t clientID, const Message<MessageType> &message)
         {
@@ -105,7 +116,8 @@ namespace nxs
         {
             auto connectionPtr = Connection<MessageType>::Create();
             connectionPtr->SetServer(this);
-            m_Acceptor.async_accept(connectionPtr->socket(), std::bind(&Server::HandleAccept, this, connectionPtr, asio::placeholders::error));
+            if(m_Acceptor.is_open())
+                m_Acceptor.async_accept(connectionPtr->socket(), std::bind(&Server::HandleAccept, this, connectionPtr, asio::placeholders::error));
         }
         void HandleAccept(std::shared_ptr<Connection<MessageType>> newConnection, const std::error_code &error)
         {

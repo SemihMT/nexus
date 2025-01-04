@@ -54,6 +54,7 @@ namespace nxs
         {
             if (m_Connected)
             {
+                m_Socket.shutdown(asio::ip::tcp::socket::shutdown_both);
                 m_Socket.close();
                 m_Connected = false;
             }
