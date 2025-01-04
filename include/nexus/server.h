@@ -15,12 +15,13 @@ namespace nxs
     template <typename MessageType>
     class Server
     {
-        public:
+    public:
         enum class ServerEvent
         {
             OnConnect,
             OnDisconnect
         };
+
     public:
         /**
          * @brief Construct a new Server object
@@ -113,8 +114,22 @@ namespace nxs
                 uint32_t newClientID = m_NextID++;
                 newConnection->SetID(newClientID);
                 m_Connections[newClientID] = newConnection;
-                newConnection->Start();
-                CallEventHandler(ServerEvent::OnConnect, newConnection);
+                // Send the client ID immediately
+                asio::async_write(
+                    newConnection->socket(),
+                    asio::buffer(&newClientID, sizeof(newClientID)),
+                    [this, newConnection](const asio::error_code &error, std::size_t /*length*/)
+                    {
+                        if (!error)
+                        {
+                            newConnection->Start(); // Start the connection normally
+                            CallEventHandler(ServerEvent::OnConnect, newConnection);
+                        }
+                        else
+                        {
+                            std::cerr << "Error sending client ID: " << error.message() << "\n";
+                        }
+                    });
             }
             StartAccept();
         }
@@ -126,7 +141,7 @@ namespace nxs
                 m_MessageHandlers[message]();
             }
         }
-        void CallEventHandler(ServerEvent event , std::shared_ptr<Connection<MessageType>> connection)
+        void CallEventHandler(ServerEvent event, std::shared_ptr<Connection<MessageType>> connection)
         {
             if (m_EventHandlers.find(event) != m_EventHandlers.end())
             {

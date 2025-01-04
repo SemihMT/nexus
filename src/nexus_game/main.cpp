@@ -259,10 +259,6 @@ int main(int argc, char *argv[])
                       { 
         std::cout << "Client connected!\n";
         ++connectedClients;
-
-        nxs::Message<MyMessageType> message{MyMessageType::FirstMessage};
-        message << connection->GetID();
-        s.SendToClient(connection->GetID(), message);
         connectedClientsText.markDirty();
         color = {0,255,0,255}; });
     s.AddEventHandler(nxs::Server<MyMessageType>::ServerEvent::OnDisconnect, [&](std::shared_ptr<nxs::Connection<MyMessageType>>)
@@ -296,17 +292,6 @@ int main(int argc, char *argv[])
     s.Run();
 
     nxs::Client<MyMessageType> c;
-    // FirstMessage is a message type that the server will send to the client when it connects,
-    // containing the client's ID, it allows for initial setup of the client
-    c.AddMessageHandler(MyMessageType::FirstMessage, [&](nxs::Message<MyMessageType> &message)
-                        {
-        std::cout << "Received message: " << message << std::endl;
-        uint32_t id;
-        message >> id;
-        std::cout << "Client ID: " << id << std::endl;
-        c.SetID(id);
-    });
-
     c.AddMessageHandler(MyMessageType::Ping, [&](nxs::Message<MyMessageType> &message)
                         {
         std::cout << "Received message: " << message << std::endl;

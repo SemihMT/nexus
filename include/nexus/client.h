@@ -33,11 +33,20 @@ namespace nxs
         {
             // Resolve the host and port
             asio::ip::tcp::resolver resolver{m_IOContext};
-            asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(host, std::to_string(port));
+            auto endpoints = resolver.resolve(host, std::to_string(port));
             // Connect to the server
-            asio::async_connect(m_Socket, endpoints, [this](const asio::error_code &error, const asio::ip::tcp::endpoint &endpoint) {
-                HandleConnect(error);
-            });
+            asio::async_connect(m_Socket, endpoints,
+                [this](const asio::error_code &error, const asio::ip::tcp::endpoint &endpoint)
+                {
+                    if (!error)
+                    {
+                        ReceiveClientID(); // Read the server-assigned client ID
+                    }
+                    else
+                    {
+                        std::cerr << "Error connecting to server: " << error.message() << "\n";
+                    }
+                });
             return m_Connected;
         };
         // Disconnect from the server
@@ -94,6 +103,16 @@ namespace nxs
         Client &operator=(Client &&other) = delete;
 
     private:
+    void ReceiveClientID()
+    {
+        asio::async_read(
+            m_Socket,
+            asio::buffer(&m_ID, sizeof(m_ID)),
+            [this](const asio::error_code &error, std::size_t /*length*/)
+            {
+                HandleConnect(error);
+            });
+    }
     void HandleConnect(const asio::error_code &error)
     {
         if (!error)
