@@ -18,3 +18,5 @@ include(cmake/Dependencies.cmake)    # External dependencies
 add_subdirectory(targets/nexus)
 add_subdirectory(targets/nexus_game)
 add_subdirectory(targets/nexus_connect_disconnect)
+add_subdirectory(targets/nexus_ping)
+add_subdirectory(targets/nexus_send_message)

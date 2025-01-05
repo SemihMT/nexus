@@ -17,7 +17,13 @@ namespace nxs
         static_assert(std::is_enum_v<MessageType>, "MessageType must be an enum class.");
         static_assert(std::is_same_v<std::underlying_type_t<MessageType>, uint32_t>,
                       "MessageType must have uint32_t as its underlying type.");
-
+    public:
+        enum class ClientEvent
+        {
+            OnConnect,
+            OnDisconnect,
+            OnMessage
+        };
     public:
         explicit Client()
             : m_IOContext{Nexus::GetInstance().GetContext()}, m_Socket{m_IOContext}
@@ -28,12 +34,14 @@ namespace nxs
             Disconnect();
         };
 
-        // Connect to a server
-        bool Connect(const std::string &host, uint16_t port)
+        // Connect to the server
+        void Connect(const std::string &host, uint16_t port)
         {
             // Resolve the host and port
             asio::ip::tcp::resolver resolver{m_IOContext};
             auto endpoints = resolver.resolve(host, std::to_string(port));
+
+            
             // Connect to the server
             asio::async_connect(m_Socket, endpoints,
                 [this](const asio::error_code &error, const asio::ip::tcp::endpoint &endpoint)
@@ -47,6 +55,10 @@ namespace nxs
                         std::cerr << "Error connecting to server: " << error.message() << "\n";
                     }
                 });
+            
+        };
+        bool IsConnected()
+        {
             return m_Connected;
         };
         // Disconnect from the server
@@ -57,6 +69,7 @@ namespace nxs
                 m_Socket.shutdown(asio::ip::tcp::socket::shutdown_both);
                 m_Socket.close();
                 m_Connected = false;
+                CallEventHandler(ClientEvent::OnDisconnect);
             }
         };
         // Send a Message (see message.h) to the server
@@ -66,6 +79,11 @@ namespace nxs
             SendBody(message.m_Data);
         };
 
+        // Add Event handler for a specific event
+        void AddEventHandler(ClientEvent event, std::function<void()> handler)
+        {
+            m_EventHandlers[event] = handler;
+        };
         // Add Message handler for a specific message type
         void AddMessageHandler(MessageType type, std::function<void(Message<MessageType>&)> handler)
         {
@@ -104,6 +122,13 @@ namespace nxs
         Client &operator=(Client &&other) = delete;
 
     private:
+    void CallEventHandler(ClientEvent event)
+    {
+        if (m_EventHandlers.find(event) != m_EventHandlers.end())
+        {
+            m_EventHandlers[event]();
+        }
+    };
     void ReceiveClientID()
     {
         asio::async_read(
@@ -119,6 +144,7 @@ namespace nxs
         if (!error)
         {
             m_Connected = true;
+            CallEventHandler(ClientEvent::OnConnect);
             // Start receiving messages
             ReceiveHeader();
         }
@@ -191,6 +217,7 @@ namespace nxs
             if (error == asio::error::eof || error == asio::error::operation_aborted)
             {
                 // Connection closed by server or aborted
+
                 Disconnect();
             }
             else
@@ -237,6 +264,9 @@ namespace nxs
          // Temporary message and header for receiving
         Message<MessageType> m_TemporaryMessage{static_cast<MessageType>(std::numeric_limits<uint32_t>::max())};
         Header<MessageType> m_TemporaryHeader{};
+
+        // Map of event handlers
+        std::unordered_map<ClientEvent, std::function<void()>> m_EventHandlers;
 
         // Map of message handlers
         std::unordered_map<MessageType, std::function<void(Message<MessageType>&)>> m_MessageHandlers;

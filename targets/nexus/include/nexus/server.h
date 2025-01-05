@@ -75,7 +75,8 @@ namespace nxs
                 connection->Disconnect();
             }
             // Close the acceptor
-            asio::post(m_IOContext, [this]() { m_Acceptor.close(); });
+            m_Acceptor.close();
+        
 
         }
         // Send a message to a specific client by ID
@@ -103,7 +104,7 @@ namespace nxs
         void OnConnectionDisconnected(std::shared_ptr<Connection<MessageType>> connection)
         {
             CallEventHandler(ServerEvent::OnDisconnect, connection);
-            // Remove connection from list
+            // Remove connection from map
             m_Connections.erase(connection->GetID());
         }
 
@@ -187,5 +188,5 @@ namespace nxs
         /// Map of IDs to connections
         std::unordered_map<uint32_t, std::shared_ptr<Connection<MessageType>>> m_Connections;
     };
-}
+}; // namespace nxs
 #endif

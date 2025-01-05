@@ -530,7 +530,7 @@ void RunClient(const std::string& serverAddress, uint16_t serverPort) {
         SDL_RenderClear(renderer);
 
         // Render text
-        RenderText(renderer, TTF_OpenFont("../../resources/UnifontExMono.ttf", 12), "Press Enter to send message", 0, 0, {255, 255, 255, 255});
+        RenderText(renderer, TTF_OpenFont("resources/UnifontExMono.ttf", 12), "Press Enter to send message", 0, 0, {255, 255, 255, 255});
 
 
         SDL_RenderPresent(renderer);

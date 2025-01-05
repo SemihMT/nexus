@@ -34,15 +34,21 @@ namespace nxs
         }
         void Disconnect()
         {
-            // Stop any ongoing reads or writes
-            m_socket.shutdown(tcp::socket::shutdown_both);
-            //Close the socket
-            m_socket.close();
+            if(m_socket.is_open())
+            {
+                // Stop any ongoing reads or writes
+                m_socket.shutdown(tcp::socket::shutdown_both);
+                //Close the socket
+                m_socket.close();
+                if(m_server)
+                {
+                    m_server->OnConnectionDisconnected(this->shared_from_this());
+                }
+                std::cout << "[" << m_ID << "] Disconnected\n";
+            }
         }
         void Send(const Message<MessageType> &message)
         {
-            // If the queue is empty: we're not currently writing
-            // If the queue is not empty: we're currently writing
             bool writeInProgress = !m_OutgoingMessages.empty();
             m_OutgoingMessages.push(message);
             if (!writeInProgress)
@@ -69,6 +75,10 @@ namespace nxs
 
         void StartRead()
         {
+            if(!m_socket.is_open())
+            {
+                return;
+            }
             // Start reading the header first
             asio::async_read(
                 m_socket,
@@ -80,6 +90,10 @@ namespace nxs
         }
         void HandleReadHeader(const asio::error_code &error)
         {
+            if(!m_socket.is_open())
+            {
+                return;
+            }
             if (!error)
             {
                 // Resize the temporary message body based on the size from the header
@@ -122,55 +136,39 @@ namespace nxs
                 HandleReadError(error);
             }
         }
-        // void HandleRead(const std::error_code &error, std::size_t bytesTransferred)
-        // {
-        //     if (!error)
-        //     {
-        //         // Process the received data
-        //         std::string message(m_buffer.data(), bytesTransferred);
-        //         std::cout << "Message from client: " << message << "\n";
-
-        //         // Continue reading
-        //         StartRead();
-        //     }
-        //     else if (error == asio::error::eof)
-        //     {
-        //         m_server->OnConnectionDisconnected(this->shared_from_this());
-        //     }
-        //     else if (error == asio::error::operation_aborted)
-        //     {
-        //         m_server->OnConnectionDisconnected(this->shared_from_this());
-        //     }
-        //     else
-        //     {
-        //         std::cerr << "Error reading from socket: " << error.message() << "\n";
-        //     }
-        // }
         void OnMessageReceived()
         {
-            // Here, you can process the complete message
-            //std::cout << "Received message: " << m_TemporaryMessage << "\n";
-            // Add to incoming queue or directly process
+            // Add to incoming queue
             m_server->ProcessIncomingMessage(this->shared_from_this(), m_TemporaryMessage);
         }
 
         void HandleReadError(const std::error_code &error)
         {
+            // NOTE: This function is called when an error occurs while reading from the socket
+            // When any error occurs, we now immediately disconnect 
+            // This is a simple way to handle errors, needs more sophisticated error handling
             if (error == asio::error::eof)
             {
-                m_server->OnConnectionDisconnected(this->shared_from_this());
+                std::cerr << "Error reading from socket: " << error.message() << "\n";
+                Disconnect();
             }
             else if (error == asio::error::operation_aborted)
             {
-                m_server->OnConnectionDisconnected(this->shared_from_this());
+                std::cerr << "Error reading from socket: " << error.message() << "\n";
+                Disconnect();
             }
             else
             {
                 std::cerr << "Error reading from socket: " << error.message() << "\n";
+                Disconnect();
             }
         }
         void StartWrite()
         {
+            if (!m_socket.is_open())
+            {
+                return;
+            }
             // Get the message at the front of the queue
             auto &message = m_OutgoingMessages.front();
             // Create a vector of buffers to send:

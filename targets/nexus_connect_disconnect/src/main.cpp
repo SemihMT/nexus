@@ -8,11 +8,6 @@ enum class MyMessageType : uint32_t
     Connect,
     Disconnect,
 };
-void DisconnectClientImmediately(std::shared_ptr<nxs::Connection<MyMessageType>> connection)
-{
-    connection->Disconnect();
-}
-
 int main(int argc, char *argv[])
 {
     nxs::Nexus::Init();
@@ -24,17 +19,36 @@ int main(int argc, char *argv[])
     }
     if(std::string(argv[1]) == "--server")
     {
-        std::cout << "Starting server...\n";
-        // Create the server on port 60000
-        nxs::Server<MyMessageType> s{60000};
-        s.AddEventHandler(nxs::Server<MyMessageType>::ServerEvent::OnConnect, DisconnectClientImmediately);
+        nxs::Server<MyMessageType> server{};
+
+        // Event handler for new connections
+        server.AddEventHandler(nxs::Server<MyMessageType>::ServerEvent::OnConnect,
+                               [&](std::shared_ptr<nxs::Connection<MyMessageType>> connection)
+                               {
+                                   std::cout << "[SERVER] " << "Client [" << connection->GetID() <<"] connected!\n";
+                                   // Disconnect the client immediately
+                                   connection->Disconnect();
+                               });
+
+        server.Run(true); // Blocks the main thread
     }
     else if(std::string(argv[1]) == "--client")
     {
-        std::cout << "Starting client...\n";
-        // Create the client
         nxs::Client<MyMessageType> client;
-        client.Connect("127.0.0.1", 60000);
+        client.Connect("localhost", 60000);
+        client.AddEventHandler(nxs::Client<MyMessageType>::ClientEvent::OnConnect,
+                               [&]()
+                               {
+                                   std::cout << "[" << client.GetID() << "] " << "Connected to server\n";
+                               });
+        client.AddEventHandler(nxs::Client<MyMessageType>::ClientEvent::OnDisconnect,
+                               [&]()
+                               {
+                                   std::cout << "[" << client.GetID() << "] " << "Disconnected from server\n";
+                               });
+        while (true)
+        {
+        }
     }
     else
     {
