@@ -25,6 +25,11 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SDL2_ttf)
 
-# Output debug messages
-message(NOTICE "ASIO Populated?: ${asio_POPULATED}")
-message(NOTICE "SDL2 Populated?: ${SDL2_POPULATED}")
+# Fetch ENet
+FetchContent_Declare(
+    enet
+    GIT_REPOSITORY https://github.com/lsalzman/enet.git
+    GIT_TAG v1.3.18
+)
+FetchContent_MakeAvailable(enet)
+
