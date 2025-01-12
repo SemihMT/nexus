@@ -23,3 +23,11 @@ add_subdirectory(targets/nexus_send_message)
 add_subdirectory(targets/enet_connect_disconnect)
 add_subdirectory(targets/enet_ping)
 add_subdirectory(targets/enet_send_message)
+
+add_subdirectory(targets/nexus_latency)
+add_subdirectory(targets/enet_latency)
+add_subdirectory(targets/asio_latency)
+
+add_subdirectory(targets/nexus_throughput)
+add_subdirectory(targets/enet_throughput)
+add_subdirectory(targets/asio_throughput)

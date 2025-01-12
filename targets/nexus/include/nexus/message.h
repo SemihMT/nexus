@@ -16,6 +16,8 @@ namespace nxs
         static_assert(std::is_same_v<std::underlying_type_t<MessageType>, uint32_t>,
                       "MessageType must have uint32_t as its underlying type.");
 
+
+        size_t Size() const { return sizeof(size) + sizeof(owner) + sizeof(type); }
         // The size of the message body in bytes NOT INCLUDING the header
         uint32_t size{};
         // The ID of the message sender
@@ -34,6 +36,9 @@ namespace nxs
 
         Message(MessageType type, uint32_t owner = 0) : m_Header{0, owner, type} {}
 
+        size_t Size() const { return m_Header.Size() + m_Data.size(); }
+        size_t BodySize() const { return m_Data.size(); }
+        
         // Overloaded << operator to allow for easy message creation
         template <typename T>
         friend Message<MessageType> &operator<<(Message<MessageType> &msg, const T &data)

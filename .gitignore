@@ -63,8 +63,14 @@ apps
 !.vscode/extensions.json
 !.vscode/*.code-snippets
 
+# Visual Studio
+.vs/*
+
 # Local History for Visual Studio Code
 .history/
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+# Non code related files
+*.xlsx

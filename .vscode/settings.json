@@ -81,7 +81,8 @@
         "*.ipp": "cpp",
         "queue": "cpp",
         "ranges": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "numeric": "cpp"
     },
     "editor.fontFamily": "Fira Code,Consolas, 'Courier New', monospace",
     "editor.fontLigatures": true
