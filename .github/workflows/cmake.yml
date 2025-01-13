@@ -40,6 +40,13 @@ jobs:
           brew install cmake
           cmake --version
 
+      # For Linux: Install Freetype for SDL_ttf
+      - name: Install Freetype
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update
+          sudo apt install libfreetype6-dev
+
       # Step 3: Configure Build
       - name: Configure Build
         run: |
