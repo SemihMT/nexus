@@ -4,7 +4,7 @@
 #include <cstring>
 #include <unordered_map>
 #include <vector>
-
+#include <cstdint>
 // Message Types
 enum class MyMessageType : uint32_t
 {
