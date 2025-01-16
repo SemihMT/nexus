@@ -76,8 +76,6 @@ namespace nxs
             }
             // Close the acceptor
             m_Acceptor.close();
-        
-
         }
         // Send a message to a specific client by ID
         void SendToClient(uint32_t clientID, const Message<MessageType> &message)
@@ -94,10 +92,15 @@ namespace nxs
         }
 
         // Broadcast a message to all clients
-        void Broadcast(const Message<MessageType> &message)
+        void Broadcast(const Message<MessageType> &message, std::optional<uint32_t> IDToSkip = std::nullopt)
         {
             for (auto &[id, connection] : m_Connections)
             {
+                if (IDToSkip.has_value() && id == IDToSkip.value())
+                {
+                    continue; // Skip the specified client ID
+                }
+
                 connection->Send(message);
             }
         }
@@ -106,6 +109,29 @@ namespace nxs
             CallEventHandler(ServerEvent::OnDisconnect, connection);
             // Remove connection from map
             m_Connections.erase(connection->GetID());
+        }
+        std::string GetServerAddress()
+        {
+            // Get the local endpoint (0.0.0.0:port)
+            auto endpoint = m_Acceptor.local_endpoint();
+
+            // Resolve the machine's hostname to get its IP addresses
+            asio::ip::tcp::resolver resolver(m_IOContext);
+            auto results = resolver.resolve(asio::ip::host_name(), "");
+
+            // Use the first non-loopback IPv4 address
+            for (const auto &entry : results)
+            {
+                auto addr = entry.endpoint().address();
+                if (addr.is_v4() && !addr.is_loopback())
+                {
+                    // Return the actual IP address and port
+                    return addr.to_string() + ":" + std::to_string(endpoint.port());
+                }
+            }
+
+            // Fallback: If no non-loopback IPv4 address is found, return the loopback address
+            return "127.0.0.1:" + std::to_string(endpoint.port());
         }
 
     private:
@@ -117,7 +143,7 @@ namespace nxs
         {
             auto connectionPtr = Connection<MessageType>::Create();
             connectionPtr->SetServer(this);
-            if(m_Acceptor.is_open())
+            if (m_Acceptor.is_open())
                 m_Acceptor.async_accept(connectionPtr->socket(), std::bind(&Server::HandleAccept, this, connectionPtr, asio::placeholders::error));
         }
         void HandleAccept(std::shared_ptr<Connection<MessageType>> newConnection, const std::error_code &error)
