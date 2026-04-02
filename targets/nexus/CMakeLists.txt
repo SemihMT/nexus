@@ -10,7 +10,7 @@ add_library(
 
     "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus/server.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/server.cpp"
-    
+
     "${CMAKE_CURRENT_SOURCE_DIR}/include/nexus/connection.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/connection.cpp"
 
@@ -21,7 +21,7 @@ target_include_directories(
     Nexus
     PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/"
-    "${asio_SOURCE_DIR}/asio/include"
+    "${asio_SOURCE_DIR}/include"
 )
 
 # Compile definitions for Nexus

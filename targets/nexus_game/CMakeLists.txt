@@ -9,16 +9,15 @@ add_executable(Nexus_Game
 # Include directories
 target_include_directories(Nexus_Game PRIVATE
     "include"
-    ${SDL2_INCLUDE_DIRS}
-    ${SDL2_ttf_INCLUDE_DIRS}
+    ${SDL3_INCLUDE_DIRS}
+    ${SDL3_ttf_INCLUDE_DIRS}
 )
 
 # Link libraries
 target_link_libraries(Nexus_Game PRIVATE
     Nexus
-    SDL2::SDL2
-    SDL2::SDL2main
-    SDL2_ttf::SDL2_ttf
+    SDL3::SDL3
+    SDL3_ttf::SDL3_ttf
 )
 
 add_custom_command(TARGET Nexus_Game POST_BUILD

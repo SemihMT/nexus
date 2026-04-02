@@ -1,8 +1,8 @@
 #ifndef NXSG_WINDOW_H
 #define NXSG_WINDOW_H
 
+#include "SDL3/SDL.h"
 #include <string>
-#include <SDL.h>
 
 namespace nxsg
 {
@@ -17,10 +17,11 @@ namespace nxsg
         window(window &&) = delete;
         window &operator=(const window &) = delete;
         window &operator=(window &&) = delete;
+
     public:
-        SDL_Window* GetSDLWindow() const {return m_sdlWindow;}
-        uint32_t width() const {return m_width;}
-        uint32_t height() const {return m_height;}
+        SDL_Window *GetSDLWindow() const { return m_sdlWindow; }
+        uint32_t width() const { return m_width; }
+        uint32_t height() const { return m_height; }
 
     private:
         std::string m_title{"Window"};
@@ -28,8 +29,8 @@ namespace nxsg
         uint32_t m_yPos{SDL_WINDOWPOS_CENTERED};
         uint32_t m_width{720};
         uint32_t m_height{480};
-        SDL_Window* m_sdlWindow{nullptr};
+        SDL_Window *m_sdlWindow{nullptr};
     };
-}
+} // namespace nxsg
 
 #endif //

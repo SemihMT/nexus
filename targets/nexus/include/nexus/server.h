@@ -1,15 +1,18 @@
 #ifndef SERVER_H
 #define SERVER_H
+
+#ifdef _WIN32
+#define _WIN32_WINNT 0x0A00
+#endif
+
 #include "connection.h"
 #include "asio.hpp"
-// Windows version definition (versions of windows handle networking differently?)
-#ifdef _WIN32
-#define _WIN32_WINNT 0x0A00 // Windows 10
-#endif
-/**
- * @brief The Server class
- *
- */
+#include <functional>
+#include <optional>
+#include <unordered_map>
+#include <memory>
+#include <future>
+
 namespace nxs
 {
     template <typename MessageType>
@@ -23,196 +26,261 @@ namespace nxs
         };
 
     public:
-        /**
-         * @brief Construct a new Server object
-         *
-         * @param port The TCP port number this server should listen on
-         */
-        Server(uint16_t port = 60000) : m_Port{port},
-                                        m_IOContext{Nexus::GetInstance().GetContext()},
-                                        m_Acceptor{m_IOContext, tcp::endpoint{tcp::v4(), m_Port}}
+        explicit Server(uint16_t port = 60000)
+            : m_Port{port}, m_IOContext{Nexus::GetInstance().GetContext()}, m_Strand{asio::make_strand(m_IOContext)}, m_Acceptor{m_IOContext, tcp::endpoint{tcp::v4(), m_Port}}
         {
         }
 
-        void AddMessageHandler(MessageType messageType, std::function<void(std::shared_ptr<Connection<MessageType>>, Message<MessageType> &)> handler)
+        // -----------------------------------------------------------------------
+        // Handler registration
+        // Must be called before Run() — no concurrent access at this point.
+        // -----------------------------------------------------------------------
+        void AddMessageHandler(
+            MessageType messageType,
+            std::function<void(std::shared_ptr<Connection<MessageType>>,
+                               Message<MessageType> &)>
+                handler)
         {
-            m_MessageHandlers[messageType] = handler;
-        }
-        void AddEventHandler(ServerEvent event, std::function<void(std::shared_ptr<Connection<MessageType>>)> handler)
-        {
-            m_EventHandlers[event] = handler;
-        }
-        void ProcessIncomingMessage(std::shared_ptr<Connection<MessageType>> connection, Message<MessageType> &message)
-        {
-            auto it = m_MessageHandlers.find(message.m_Header.type);
-            if (it != m_MessageHandlers.end())
-            {
-                it->second(connection, message);
-            }
-            else
-            {
-                std::cerr << "No handler registered for message type: "
-                          << static_cast<uint32_t>(message.m_Header.type) << "\n";
-            }
+            m_MessageHandlers[messageType] = std::move(handler);
         }
 
+        void AddEventHandler(
+            ServerEvent event,
+            std::function<void(std::shared_ptr<Connection<MessageType>>)> handler)
+        {
+            m_EventHandlers[event] = std::move(handler);
+        }
+
+        // -----------------------------------------------------------------------
+        // Called by Connection (from a connection strand thread).
+        // Post onto the server strand so m_MessageHandlers is accessed safely.
+        // -----------------------------------------------------------------------
+        void ProcessIncomingMessage(
+            std::shared_ptr<Connection<MessageType>> connection,
+            Message<MessageType> message) // by value — safe to move into lambda
+        {
+            asio::post(m_Strand,
+                       [this, connection, message = std::move(message)]() mutable
+                       {
+                           auto it = m_MessageHandlers.find(message.m_Header.type);
+                           if (it != m_MessageHandlers.end())
+                               it->second(connection, message);
+                           else
+                               std::cerr << "No handler for message type "
+                                         << static_cast<uint32_t>(message.m_Header.type) << "\n";
+                       });
+        }
+
+        // -----------------------------------------------------------------------
+        // Run — kicks off the accept loop.
+        // Block = true: parks the calling thread cleanly (no spin).
+        // -----------------------------------------------------------------------
         void Run(bool shouldBlock = false)
         {
             StartAccept();
-            // If there's no game loop implemented, it's up to the user to block the process so the server can run
+
             if (shouldBlock)
             {
-                while (true)
-                {
-                }
+                // Park here until Shutdown() signals us.
+                m_ShutdownFuture = m_ShutdownPromise.get_future();
+                m_ShutdownFuture.wait();
             }
         }
+
+        // -----------------------------------------------------------------------
+        // Shutdown — safe to call from any thread.
+        // -----------------------------------------------------------------------
         void Shutdown()
         {
-            // Close all connections
-            for (auto &[id, connection] : m_Connections)
-            {
-                connection->Disconnect();
-            }
-            // Close the acceptor
-            m_Acceptor.close();
+            asio::post(m_Strand, [this]()
+                       {
+                           // Disconnect all connections (each Disconnect() posts to that
+                           // connection's own strand, so it's safe to call here).
+                           for (auto &[id, conn] : m_Connections)
+                               conn->Disconnect();
+
+                           m_Connections.clear();
+                           m_Acceptor.close();
+
+                           // Unblock Run(true) if it's waiting.
+                           try
+                           {
+                               m_ShutdownPromise.set_value();
+                           }
+                           catch (const std::future_error &)
+                           {
+                           } // already set — ignore
+                       });
         }
-        // Send a message to a specific client by ID
+
+        // -----------------------------------------------------------------------
+        // SendToClient — safe to call from any thread (e.g. game loop).
+        // -----------------------------------------------------------------------
         void SendToClient(uint32_t clientID, const Message<MessageType> &message)
         {
-            auto it = m_Connections.find(clientID);
-            if (it != m_Connections.end())
-            {
-                it->second->Send(message);
-            }
-            else
-            {
-                std::cerr << "Client ID " << clientID << " not found.\n";
-            }
+            asio::post(m_Strand,
+                       [this, clientID, message]()
+                       {
+                           auto it = m_Connections.find(clientID);
+                           if (it != m_Connections.end())
+                               it->second->Send(message);
+                           else
+                               std::cerr << "Client ID " << clientID << " not found.\n";
+                       });
         }
 
-        // Broadcast a message to all clients
-        void Broadcast(const Message<MessageType> &message, std::optional<uint32_t> IDToSkip = std::nullopt)
+        // -----------------------------------------------------------------------
+        // Broadcast — safe to call from any thread.
+        // -----------------------------------------------------------------------
+        void Broadcast(const Message<MessageType> &message,
+                       std::optional<uint32_t> IDToSkip = std::nullopt)
         {
-            for (auto &[id, connection] : m_Connections)
-            {
-                if (IDToSkip.has_value() && id == IDToSkip.value())
-                {
-                    continue; // Skip the specified client ID
-                }
+            asio::post(m_Strand,
+                       [this, message, IDToSkip]()
+                       {
+                           for (auto &[id, conn] : m_Connections)
+                           {
+                               if (IDToSkip.has_value() && id == IDToSkip.value())
+                                   continue;
+                               conn->Send(message);
+                           }
+                       });
+        }
 
-                connection->Send(message);
-            }
-        }
-        void OnConnectionDisconnected(std::shared_ptr<Connection<MessageType>> connection)
+        // -----------------------------------------------------------------------
+        // Called by Connection::DoDisconnect() (on that connection's strand).
+        // Post onto the server strand so m_Connections is accessed safely.
+        // -----------------------------------------------------------------------
+        void OnConnectionDisconnected(
+            std::shared_ptr<Connection<MessageType>> connection)
         {
-            CallEventHandler(ServerEvent::OnDisconnect, connection);
-            // Remove connection from map
-            m_Connections.erase(connection->GetID());
+            asio::post(m_Strand,
+                       [this, connection]()
+                       {
+                           CallEventHandler(ServerEvent::OnDisconnect, connection);
+                           m_Connections.erase(connection->GetID());
+                       });
         }
+
+        // -----------------------------------------------------------------------
+        // GetServerAddress — synchronous, safe to call before/after Run().
+        // -----------------------------------------------------------------------
         std::string GetServerAddress()
         {
-            // Get the local endpoint (0.0.0.0:port)
             auto endpoint = m_Acceptor.local_endpoint();
 
-            // Resolve the machine's hostname to get its IP addresses
             asio::ip::tcp::resolver resolver(m_IOContext);
             auto results = resolver.resolve(asio::ip::host_name(), "");
 
-            // Use the first non-loopback IPv4 address
             for (const auto &entry : results)
             {
                 auto addr = entry.endpoint().address();
                 if (addr.is_v4() && !addr.is_loopback())
-                {
-                    // Return the actual IP address and port
                     return addr.to_string() + ":" + std::to_string(endpoint.port());
-                }
             }
 
-            // Fallback: If no non-loopback IPv4 address is found, return the loopback address
             return "127.0.0.1:" + std::to_string(endpoint.port());
         }
 
     private:
-        /**
-         * @brief Creates a Connection pointer using Connection::Create(),
-         * listens and accepts any connection request on Connection::m_socket
-         */
+        // -----------------------------------------------------------------------
+        // Accept loop — runs on the server strand.
+        // -----------------------------------------------------------------------
         void StartAccept()
         {
             auto connectionPtr = Connection<MessageType>::Create();
             connectionPtr->SetServer(this);
-            if (m_Acceptor.is_open())
-                m_Acceptor.async_accept(connectionPtr->socket(), std::bind(&Server::HandleAccept, this, connectionPtr, asio::placeholders::error));
-        }
-        void HandleAccept(std::shared_ptr<Connection<MessageType>> newConnection, const std::error_code &error)
-        {
-            if (!error)
-            {
-                uint32_t newClientID = m_NextID++;
-                newConnection->SetID(newClientID);
-                m_Connections[newClientID] = newConnection;
-                // Send the client ID immediately
-                asio::async_write(
-                    newConnection->socket(),
-                    asio::buffer(&newClientID, sizeof(newClientID)),
-                    [this, newConnection](const asio::error_code &error, std::size_t /*length*/)
-                    {
-                        if (!error)
-                        {
-                            newConnection->Start(); // Start the connection normally
-                            CallEventHandler(ServerEvent::OnConnect, newConnection);
-                        }
-                        else
-                        {
-                            std::cerr << "Error sending client ID: " << error.message() << "\n";
-                        }
-                    });
-            }
-            StartAccept();
+
+            if (!m_Acceptor.is_open())
+                return;
+
+            m_Acceptor.async_accept(
+                connectionPtr->socket(),
+                asio::bind_executor(m_Strand,
+                                    std::bind(&Server::HandleAccept, this,
+                                              connectionPtr,
+                                              asio::placeholders::error)));
         }
 
-        void CallMessageHandler(MessageType message)
+        void HandleAccept(std::shared_ptr<Connection<MessageType>> newConnection,
+                          const asio::error_code &error)
         {
-            if (m_MessageHandlers.find(message) != m_MessageHandlers.end())
+            // Always queue the next accept first so we don't stall the accept
+            // loop while the handshake for this connection is in flight.
+            StartAccept();
+
+            if (error)
             {
-                m_MessageHandlers[message]();
+                if (error != asio::error::operation_aborted)
+                    std::cerr << "Accept error: " << error.message() << "\n";
+                return;
             }
+
+            uint32_t newClientID = m_NextID++;
+            newConnection->SetID(newClientID);
+            m_Connections[newClientID] = newConnection;
+
+            // Send the assigned client ID. Bind through the connection's own
+            // strand — this write races with nothing because the connection
+            // hasn't called Start() yet and the socket is ours alone here.
+            asio::async_write(
+                newConnection->socket(),
+                asio::buffer(&newClientID, sizeof(newClientID)),
+                asio::bind_executor(newConnection->strand(),
+                                    [this, newConnection](const asio::error_code &ec, std::size_t)
+                                    {
+                                        if (!ec)
+                                        {
+                                            newConnection->Start();
+                                            // Post the user callback back onto the server strand
+                                            // so it can safely call Broadcast/SendToClient etc.
+                                            asio::post(m_Strand, [this, newConnection]()
+                                                       { CallEventHandler(ServerEvent::OnConnect, newConnection); });
+                                        }
+                                        else
+                                        {
+                                            std::cerr << "Error sending client ID: " << ec.message() << "\n";
+                                        }
+                                    }));
         }
-        void CallEventHandler(ServerEvent event, std::shared_ptr<Connection<MessageType>> connection)
+
+        void CallEventHandler(ServerEvent event,
+                              std::shared_ptr<Connection<MessageType>> connection)
         {
-            if (m_EventHandlers.find(event) != m_EventHandlers.end())
-            {
-                m_EventHandlers[event](connection);
-            }
+            auto it = m_EventHandlers.find(event);
+            if (it != m_EventHandlers.end())
+                it->second(connection);
         }
 
     private:
-        /**
-         * @brief The port number for this server
-         */
         uint16_t m_Port{60000};
-
-        /**
-         * @brief The ASIO IO Context
-         */
         asio::io_context &m_IOContext;
 
-        /**
-         * @brief The ASIO TCP Acceptor object, handles accepting incoming connections on the port
-         */
+        // All access to m_Connections, m_NextID, and the handler maps is
+        // serialised through this strand. No mutex needed.
+        asio::strand<asio::io_context::executor_type> m_Strand;
+
         tcp::acceptor m_Acceptor;
 
-        /// Map of event handlers
-        std::unordered_map<MessageType, std::function<void(std::shared_ptr<Connection<MessageType>>, Message<MessageType> &)>> m_MessageHandlers;
-        /// Map of event handlers
-        std::unordered_map<ServerEvent, std::function<void(std::shared_ptr<Connection<MessageType>>)>> m_EventHandlers;
+        std::unordered_map<MessageType,
+                           std::function<void(std::shared_ptr<Connection<MessageType>>,
+                                              Message<MessageType> &)>>
+            m_MessageHandlers;
 
-        /// The next ID to be assigned to a connection
+        std::unordered_map<ServerEvent,
+                           std::function<void(std::shared_ptr<Connection<MessageType>>)>>
+            m_EventHandlers;
+
         uint32_t m_NextID{1001};
-        /// Map of IDs to connections
-        std::unordered_map<uint32_t, std::shared_ptr<Connection<MessageType>>> m_Connections;
+        std::unordered_map<uint32_t,
+                           std::shared_ptr<Connection<MessageType>>>
+            m_Connections;
+
+        // Used by Run(true) / Shutdown() to park and unpark the calling thread.
+        std::promise<void> m_ShutdownPromise;
+        std::future<void> m_ShutdownFuture;
     };
-}; // namespace nxs
-#endif
+
+} // namespace nxs
+
+#endif // SERVER_H

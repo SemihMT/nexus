@@ -2,13 +2,13 @@
 #include "nexus_game/nxsg_renderer.h"
 #include <stdexcept>
 
-nxsg::Text::Text(const nxsg::renderer& renderer, const std::string& fontPath, int fontSize)
+nxsg::Text::Text(const nxsg::renderer &renderer, const std::string &fontPath, int fontSize)
     : m_renderer(renderer), m_font(nullptr), m_texture(nullptr), m_dirty(true)
 {
     m_font = TTF_OpenFont(fontPath.c_str(), fontSize);
     if (!m_font)
     {
-        throw std::runtime_error("Failed to load font: " + fontPath + " " + TTF_GetError());
+        throw std::runtime_error("Failed to load font: " + fontPath + " " + SDL_GetError());
     }
 }
 
@@ -34,15 +34,15 @@ void nxsg::Text::setText(const std::string &text, SDL_Color color)
         SDL_DestroyTexture(m_texture);
     }
 
-    SDL_Surface *surface = TTF_RenderUTF8_Blended_Wrapped(m_font, text.c_str(), color,0);
+    SDL_Surface *surface = TTF_RenderText_Blended_Wrapped(m_font, text.c_str(), text.length(), color, 0);
     if (!surface)
     {
-        throw std::runtime_error("Failed to create text surface: " + std::string(TTF_GetError()));
+        throw std::runtime_error("Failed to create text surface: " + std::string(SDL_GetError()));
     }
 
     m_texture = SDL_CreateTextureFromSurface(m_renderer.GetSDLRenderer(), surface);
-    SDL_QueryTexture(m_texture, nullptr, nullptr, &m_textRect.w, &m_textRect.h);
-    SDL_FreeSurface(surface);
+    SDL_GetTextureSize(m_texture, &m_textRect.w, &m_textRect.h);
+    SDL_DestroySurface(surface);
 
     if (!m_texture)
     {
@@ -52,16 +52,16 @@ void nxsg::Text::setText(const std::string &text, SDL_Color color)
     m_dirty = false;
 }
 
-void nxsg::Text::render(int x, int y)
+void nxsg::Text::render(float x, float y)
 {
     if (m_texture)
     {
-        SDL_Rect dstRect = {x, y, m_textRect.w, m_textRect.h};
-        SDL_RenderCopy(m_renderer.GetSDLRenderer(), m_texture, nullptr, &dstRect);
+        SDL_FRect dstRect = {x, y, m_textRect.w, m_textRect.h};
+        SDL_RenderTexture(m_renderer.GetSDLRenderer(), m_texture, nullptr, &dstRect);
     }
 }
 
-SDL_Rect nxsg::Text::getRect() const
+SDL_FRect nxsg::Text::getRect() const
 {
     return m_textRect;
 }

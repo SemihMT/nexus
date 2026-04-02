@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.28)
- 
+
 # Define the project
-project(Nexus 
+project(Nexus
         VERSION 1.0.0
-        DESCRIPTION "The Nexus API is a high-level game networking API built on ASIO" 
+        DESCRIPTION "The Nexus API is a high-level game networking API built on ASIO"
         LANGUAGES CXX)
 
 # Set the fetch content base directory
